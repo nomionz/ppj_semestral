@@ -42,7 +42,7 @@ public class WeatherControllerTest {
         DailyWeatherResponse response = new DailyWeatherResponse(date,temp, pressure, humidity);
         when(weatherService.getWeatherToday("New York")).thenReturn(response);
 
-        mockMvc.perform(get("/weather/today/New York"))
+        mockMvc.perform(get("/weather/New York?period=today"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.date").value(date))
                 .andExpect(jsonPath("$.temperature").value(temp))
@@ -58,7 +58,7 @@ public class WeatherControllerTest {
         WeatherResponse response = getWeatherResponse(metrics);
         when(weatherService.getWeatherWeek("New York")).thenReturn(response);
 
-        mockMvc.perform(get("/weather/week/New York"))
+        mockMvc.perform(get("/weather/New York?period=week"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.metrics.average_temperature").value(15))
                 .andExpect(jsonPath("$.metrics.average_pressure").value(25))
@@ -71,14 +71,6 @@ public class WeatherControllerTest {
         verify(weatherService).getWeatherWeek("New York");
     }
 
-    private static WeatherResponse getWeatherResponse(WeatherMetrics metrics) {
-        List<DailyWeatherResponse> dailyWeather = List.of(
-                new DailyWeatherResponse(1620000000, 25.5, 1013.25, 50)
-        );
-
-        return new WeatherResponse(metrics, dailyWeather);
-    }
-
     @Test
     public void testGetWeatherTwoWeeks() throws Exception {
         WeatherMetrics metrics = new WeatherMetrics(22, 25, 20);
@@ -86,7 +78,7 @@ public class WeatherControllerTest {
 
         when(weatherService.getWeatherTwoWeeks("Los Angeles")).thenReturn(response);
 
-        mockMvc.perform(get("/weather/weeks/Los Angeles"))
+        mockMvc.perform(get("/weather/Los Angeles?period=weeks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.metrics.average_temperature").value(22))
                 .andExpect(jsonPath("$.metrics.average_pressure").value(25))
@@ -97,4 +89,21 @@ public class WeatherControllerTest {
 
         verify(weatherService).getWeatherTwoWeeks("Los Angeles");
     }
+
+
+    @Test
+    public void testInvalidPeriod() throws Exception {
+        mockMvc.perform(get("/weather/Los Angeles?period=hehe"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Invalid period specified"));
+    }
+
+    private static WeatherResponse getWeatherResponse(WeatherMetrics metrics) {
+        List<DailyWeatherResponse> dailyWeather = List.of(
+                new DailyWeatherResponse(1620000000, 25.5, 1013.25, 50)
+        );
+
+        return new WeatherResponse(metrics, dailyWeather);
+    }
+
 }
